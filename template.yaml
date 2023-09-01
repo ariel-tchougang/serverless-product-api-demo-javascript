@@ -1,0 +1,295 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  product-api-node16
+Transform:
+- AWS::Serverless-2016-10-31
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+    Runtime: nodejs16.x
+    Tracing: Active
+    Tags:
+      context: serverless-guru
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref DynamoDBTableName
+  Api:
+    TracingEnabled: True
+
+Parameters:
+  DynamoDBTableName:
+    Type: String
+    Description: Name of the DynamoDB table to be created by this template
+
+Resources:
+  DynamoDBBasicReadPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows basic DynamoDB read actions for Lambda functions
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Sid: AllowBasicDynamoDBReadActions
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:BatchGetItem
+            Resource: 
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTableName}/index/*
+              
+  DynamoDBBasicWritePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows basic DynamoDB write actions for Lambda functions
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Sid: AllowBasicDynamoDBWriteActions
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:ConditionCheckItem
+            Resource: 
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTableName}/index/*
+              
+  DynamoDBBasicDeletePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows basic DynamoDB delete item for Lambda functions
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Sid: AllowBasicDynamoDBDeleteItemAction
+            Action:
+              - dynamodb:DeleteItem
+            Resource: 
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTableName}/index/*
+              
+  LambdaLoggingPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows basic logging actions for Lambda functions
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Sid: AllowBasicLoggingActions
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: '*'
+            
+  AWSXrayWriteOnlyPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows X-Ray write access
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Sid: AWSXrayWriteOnlyAccess
+            Action:
+              - xray:PutTraceSegments
+              - xray:PutTelemetryRecords
+              - xray:GetSamplingRules
+              - xray:GetSamplingTargets
+              - xray:GetSamplingStatisticSummaries
+            Resource: '*'
+            
+  getItemsFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # RoleName: getItemsFunctionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref DynamoDBBasicReadPolicy
+        - !Ref LambdaLoggingPolicy
+        - !Ref AWSXrayWriteOnlyPolicy
+            
+  createItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # RoleName: createItemFunctionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref DynamoDBBasicWritePolicy
+        - !Ref LambdaLoggingPolicy
+        - !Ref AWSXrayWriteOnlyPolicy
+            
+  updateItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # RoleName: updateItemFunctionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref DynamoDBBasicWritePolicy
+        - !Ref LambdaLoggingPolicy
+        - !Ref AWSXrayWriteOnlyPolicy
+            
+  deleteItemFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # RoleName: deleteItemFunctionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref DynamoDBBasicDeletePolicy
+        - !Ref LambdaLoggingPolicy
+        - !Ref AWSXrayWriteOnlyPolicy
+
+  getItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-items.getItemsHandler
+      Description: A simple example includes a HTTP get method to get items from a DynamoDB table.
+      Role: !GetAtt getItemsFunctionRole.Arn
+      Events:
+        GetAll:
+          Type: Api
+          Properties:
+            Path: /products
+            Method: GET
+        GetOne:
+          Type: Api
+          Properties:
+            Path: /products/{id}
+            Method: GET
+            
+  createItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/create-item.createItemHandler
+      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
+      Role: !GetAtt createItemFunctionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /products
+            Method: POST
+            
+  updateItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/update-item.updateItemHandler
+      Description: A simple example includes a HTTP put method to update one item in a DynamoDB table.
+      Role: !GetAtt updateItemFunctionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /products/{id}
+            Method: PUT
+            
+  deleteItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/delete-item.deleteItemHandler
+      Description: A simple example includes a HTTP delete method to delete one item in a DynamoDB table.
+      Role: !GetAtt deleteItemFunctionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /products/{id}
+            Method: DELETE
+  
+  DynamoDbTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Ref DynamoDBTableName
+      PrimaryKey:
+        Name: id
+        Type: String
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+      
+Outputs:
+  WebEndpoint:
+    Description: API Gateway endpoint URL for Prod stage
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    
+  CreateItemFunction:
+    Description: "Product Api create item Function ARN"
+    Value: !GetAtt createItemFunction.Arn
+    
+  GetItemsFunction:
+    Description: "Product Api get items Function ARN"
+    Value: !GetAtt getItemsFunction.Arn
+    
+  UpdateItemFunction:
+    Description: "Product Api update item Function ARN"
+    Value: !GetAtt updateItemFunction.Arn
+    
+  DeleteItemFunction:
+    Description: "Product Api delete item Function ARN"
+    Value: !GetAtt deleteItemFunction.Arn
+    
+  CreateItemFunctionRole:
+    Description: "Product Api create item Function Role ARN"
+    Value: !GetAtt createItemFunctionRole.Arn
+    
+  GetItemsFunctionRole:
+    Description: "Product Api get items Function Role ARN"
+    Value: !GetAtt getItemsFunctionRole.Arn
+    
+  UpdateItemFunctionRole:
+    Description: "Product Api update item Function Role ARN"
+    Value: !GetAtt updateItemFunctionRole.Arn
+    
+  DeleteItemFunctionRole:
+    Description: "Product Api delete item Function Role ARN"
+    Value: !GetAtt deleteItemFunctionRole.Arn
