@@ -113,6 +113,7 @@ resources:
             - Effect: Allow
               Action:
                 - "dynamodb:DeleteItem"
+                - "dynamodb:ConditionCheckItem"
               Resource:
                 - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.DynamoDBTableName}"
                 - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.DynamoDBTableName}/index/*"
