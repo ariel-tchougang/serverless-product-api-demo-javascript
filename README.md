@@ -48,7 +48,7 @@ The first command will build the source of your application. The second command 
 * **Stack Name**: The name of the stack to deploy to CloudFormation. This should be unique to your account and region, and a good starting point would be something matching your project name.
 * **AWS Region**: The AWS region you want to deploy your app to.
 * **Confirm changes before deploy**: If set to yes, any change sets will be shown to you before execution for manual review. If set to no, the AWS SAM CLI will automatically deploy application changes.
-* **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command.
+* **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` & `CAPABILITY_NAMED_IAM` values for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM` to the `sam deploy` command.
 * **Save arguments to samconfig.toml**: If set to yes, your choices will be saved to a configuration file inside the project, so that in the future you can just re-run `sam deploy` without parameters to deploy changes to your application.
 
 The API Gateway endpoint API will be displayed in the outputs when the deployment is complete.
@@ -68,7 +68,7 @@ Test a single function by invoking it directly with a test event. An event is a 
 Run functions locally and invoke them with the `sam local invoke` command.
 
 ```bash
-my-application$ sam local invoke putItemFunction --event events/event-post-item.json
+my-application$ sam local invoke createItemFunction --event events/event-create-item.json
 my-application$ sam local invoke getAllItemsFunction --event events/event-get-all-items.json
 ```
 
@@ -83,11 +83,31 @@ The AWS SAM CLI reads the application template to determine the API's routes and
 
 ```yaml
       Events:
-        Api:
+        GetAll:
           Type: Api
           Properties:
-            Path: /
+            Path: /products
             Method: GET
+        GetOne:
+          Type: Api
+          Properties:
+            Path: /products/{id}
+            Method: GET
+        CreateItem:
+          Type: Api
+          Properties:
+            Path: /products
+            Method: POST
+        UpdateItem:
+          Type: Api
+          Properties:
+            Path: /products/{id}
+            Method: PUT
+        DeleteItem:
+          Type: Api
+          Properties:
+            Path: /products/{id}
+            Method: DELETE
 ```
 
 ## Add a resource to your application
@@ -129,7 +149,7 @@ To simplify troubleshooting, the AWS SAM CLI has a command called `sam logs`. `s
 **NOTE:** This command works for all Lambda functions, not just the ones you deploy using AWS SAM.
 
 ```bash
-my-application$ sam logs -n putItemFunction --stack-name sam-app --tail
+my-application$ sam logs -n createItemFunction --stack-name sam-app --tail
 ```
 
 **NOTE:** This uses the logical name of the function within the stack. This is the correct name to use when searching logs inside an AWS Lambda function within a CloudFormation stack, even if the deployed function name varies due to CloudFormation's unique resource name generation.
