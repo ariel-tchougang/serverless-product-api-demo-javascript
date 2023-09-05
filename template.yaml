@@ -204,7 +204,7 @@ Resources:
       Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
       Role: !GetAtt createItemFunctionRole.Arn
       Events:
-        Api:
+        CreateItem:
           Type: Api
           Properties:
             Path: /products
@@ -217,7 +217,7 @@ Resources:
       Description: A simple example includes a HTTP put method to update one item in a DynamoDB table.
       Role: !GetAtt updateItemFunctionRole.Arn
       Events:
-        Api:
+        UpdateItem:
           Type: Api
           Properties:
             Path: /products/{id}
@@ -230,7 +230,7 @@ Resources:
       Description: A simple example includes a HTTP delete method to delete one item in a DynamoDB table.
       Role: !GetAtt deleteItemFunctionRole.Arn
       Events:
-        Api:
+        DeleteItem:
           Type: Api
           Properties:
             Path: /products/{id}
