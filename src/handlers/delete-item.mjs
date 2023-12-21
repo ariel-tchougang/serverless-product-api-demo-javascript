@@ -1,26 +1,25 @@
-// Create clients and set shared const values outside of the handler.
+// src/handlers/delete-item.mjs
 
-// Get the DynamoDB table name from environment variables
+import AWSXRay from 'aws-xray-sdk-core';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DeleteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+
+const client = AWSXRay.captureAWSv3Client(new DynamoDBClient({}));
+const documentClient = DynamoDBDocumentClient.from(client);
 const tableName = process.env.TABLE_NAME;
-
-// Create a DocumentClient that represents the query to add an item
-const dynamodb = require('aws-sdk/clients/dynamodb');
-const docClient = new dynamodb.DocumentClient();
 
 /**
  * A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
  */
-exports.updateItemHandler = async (event) => {
-  if (event.httpMethod !== 'PUT') {
-    throw new Error(`updateMethod only accept PUT method, you tried: ${event.httpMethod}`);
+export const deleteItemHandler = async (event) => {
+  if (event.httpMethod !== 'DELETE') {
+    throw new Error(`deleteMethod only accept DELETE method, you tried: ${event.httpMethod}`);
   }
   // All log statements are written to CloudWatch
   console.info('received:', event);
  
   // Get id from pathParameters from APIGateway because of `/{id}` at template.yaml
   const id = event.pathParameters.id;
-  
-  const product = JSON.parse(event.body);
  
   // Get the item from the table
   // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#get-property
@@ -30,20 +29,17 @@ exports.updateItemHandler = async (event) => {
     const params = {
       TableName : tableName,
       Key: { id: id },
-      UpdateExpression: "set #n = :n",
-      ExpressionAttributeValues: {":n": product.name},
-      ExpressionAttributeNames: {"#n": "name"},
-      ReturnValues: "UPDATED_NEW"
     };
     
-    const data = await docClient.update(params).promise();
+    response = await documentClient.send(new DeleteCommand(params));
+    console.log('DeleteCommand response: ', response);
 
     response = {
       statusCode: 200,
-      body: JSON.stringify(data)
+      body: JSON.stringify({})
     };
   } catch (err) {
-    response = exports.manageErrors(err);
+    response = manageErrors(err);
   }
  
   // All log statements are written to CloudWatch
@@ -51,7 +47,7 @@ exports.updateItemHandler = async (event) => {
   return response;
 }
 
-exports.manageErrors = err => {
+export const manageErrors = err => {
   console.error(err);
   if (err.name === 'ResourceNotFoundException') {
     return {

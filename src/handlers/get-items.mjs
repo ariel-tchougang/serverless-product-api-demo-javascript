@@ -1,18 +1,19 @@
-// Create clients and set shared const values outside of the handler.
+// src/handlers/get-items.mjs
 
-// Get the DynamoDB table name from environment variables
+import AWSXRay from 'aws-xray-sdk-core';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { GetCommand, ScanCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+
+const client = AWSXRay.captureAWSv3Client(new DynamoDBClient({}));
+const documentClient = DynamoDBDocumentClient.from(client);
 const tableName = process.env.TABLE_NAME;
-
-// Create a DocumentClient that represents the query to add an item
-const dynamodb = require('aws-sdk/clients/dynamodb');
-const docClient = new dynamodb.DocumentClient();
 
 /**
  * A simple example includes:
  *  - a HTTP get method to get one item by id from a DynamoDB table.
  *  - a HTTP get method to get all items from a DynamoDB table.
  */
-exports.getItemsHandler = async (event) => {
+export const getItemsHandler = async (event) => {
   if (event.httpMethod !== 'GET') {
     throw new Error(`getMethod only accept GET method, you tried: ${event.httpMethod}`);
   }
@@ -24,12 +25,12 @@ exports.getItemsHandler = async (event) => {
   try {
     
     if(event.pathParameters) {
-      response = await exports.getItemById(event.pathParameters.id);
+      response = await getItemById(event.pathParameters.id);
     } else {
-      response = await exports.getAllItems();
+      response = await getAllItems();
     }
   } catch (err) {
-    response = exports.manageErrors(err);
+    response = manageErrors(err);
   }
  
   // All log statements are written to CloudWatch
@@ -37,7 +38,7 @@ exports.getItemsHandler = async (event) => {
   return response;
 }
 
-exports.getAllItems = async () => {
+export const getAllItems = async () => {
 
   console.info('entering getAllItems');
   
@@ -50,21 +51,22 @@ exports.getAllItems = async () => {
     
     console.info('initiating scan');
     
-    const data = await docClient.scan(params).promise();
-    const items = data.Items;
+    response = await documentClient.send(new ScanCommand(params));
+    console.log('ScanCommand response: ', response);
+    const items = response.Items;
 
     response = {
         statusCode: 200,
         body: JSON.stringify(items)
     };
   } catch (err) {
-    response = exports.manageErrors(err);
+    response = manageErrors(err);
   }
   
   return response;
 }
 
-exports.getItemById = async id => {
+export const getItemById = async id => {
 
   console.info('entering getItemById');
   
@@ -78,8 +80,9 @@ exports.getItemById = async id => {
     
     console.info('initiating get-item');
     
-    const data = await docClient.get(params).promise();
-    const item = data.Item;
+    response = await documentClient.send(new GetCommand(params));
+    console.log('GetCommand response: ', response);
+    const item = response.Item;
    
     response = {
       statusCode: 200,
@@ -87,13 +90,13 @@ exports.getItemById = async id => {
     };
     
   } catch (err) {
-    response = exports.manageErrors(err);
+    response = manageErrors(err);
   }
  
   return response;
 }
 
-exports.manageErrors = err => {
+export const manageErrors = err => {
   console.error('Caught error: ', err);
   if (err.name === 'ResourceNotFoundException') {
     return {

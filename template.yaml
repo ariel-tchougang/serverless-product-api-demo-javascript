@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  product-api-node16
+  product-api-node18
 Transform:
 - AWS::Serverless-2016-10-31
 
@@ -9,7 +9,7 @@ Globals:
   Function:
     Timeout: 10
     MemorySize: 128
-    Runtime: nodejs16.x
+    Runtime: nodejs18.x
     Tracing: Active
     Tags:
       context: serverless-guru
