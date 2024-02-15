@@ -1,6 +1,6 @@
 // __tests__/unit/handlers/update-item.test.js
 
-import { updateItemHandler, manageErrors } from '../../../src/handlers/update-item.mjs';
+import { updateItemHandler } from '../../../src/handlers/update-item.mjs';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 

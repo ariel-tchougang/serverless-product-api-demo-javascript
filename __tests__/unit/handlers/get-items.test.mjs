@@ -1,6 +1,6 @@
 // __tests__/unit/handlers/get-items.test.js
 
-import { getItemsHandler, getAllItems, getItemById, manageErrors } from '../../../src/handlers/get-items.mjs';
+import { getItemsHandler, getAllItems, getItemById } from '../../../src/handlers/get-items.mjs';
 import { DynamoDBDocumentClient, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 

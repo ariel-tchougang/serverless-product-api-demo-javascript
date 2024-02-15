@@ -1,6 +1,6 @@
 // __tests__/unit/handlers/create-item.test.js
 
-import { createItemHandler, manageErrors } from '../../../src/handlers/create-item.mjs';
+import { createItemHandler } from '../../../src/handlers/create-item.mjs';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { v4 as uuidv4 } from 'uuid';

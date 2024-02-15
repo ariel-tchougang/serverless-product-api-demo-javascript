@@ -49,7 +49,7 @@ export const createItemHandler = async (event) => {
     return response;
 };
 
-export const manageErrors = err => {
+const manageErrors = err => {
   console.error(err);
   if (err.name === 'ResourceNotFoundException') {
     return {

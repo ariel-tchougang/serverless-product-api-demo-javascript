@@ -96,7 +96,7 @@ export const getItemById = async id => {
   return response;
 }
 
-export const manageErrors = err => {
+const manageErrors = err => {
   console.error('Caught error: ', err);
   if (err.name === 'ResourceNotFoundException') {
     return {

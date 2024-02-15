@@ -1,6 +1,6 @@
 // __tests__/unit/handlers/delete-item.test.js
 
-import { deleteItemHandler, manageErrors } from '../../../src/handlers/delete-item.mjs';
+import { deleteItemHandler } from '../../../src/handlers/delete-item.mjs';
 import { DynamoDBDocumentClient, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 

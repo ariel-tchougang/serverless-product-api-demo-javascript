@@ -9,7 +9,7 @@ const documentClient = DynamoDBDocumentClient.from(client);
 const tableName = process.env.TABLE_NAME;
 
 /**
- * A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
+ * A simple example includes a HTTP PUT method to update one item in a DynamoDB table.
  */
 export const updateItemHandler = async (event) => {
   if (event.httpMethod !== 'PUT') {
@@ -58,7 +58,7 @@ export const updateItemHandler = async (event) => {
   return response;
 }
 
-export const manageErrors = err => {
+const manageErrors = err => {
   console.error(err);
   if (err.name === 'ResourceNotFoundException') {
     return {
